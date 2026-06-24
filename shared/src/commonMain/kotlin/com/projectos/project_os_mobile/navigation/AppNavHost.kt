@@ -23,8 +23,8 @@ enum class Routes(val icon: DrawableResource, val label: String) {
 val STARTING_PAGE = Routes.APPS
 
 @Composable
-fun AppNavHost(navController: NavHostController, startDestination: Routes, modifier: Modifier = Modifier) {
-    NavHost (navController = navController, startDestination = startDestination.name, modifier = modifier) {
+fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
+    NavHost (navController = navController, startDestination = STARTING_PAGE.name, modifier = modifier) {
         composable(Routes.HOME.name)  { HomePage { navController.navigate(it) } }
         composable(Routes.APPS.name)  { Text("Hello!") }
     }
