@@ -16,6 +16,7 @@ material3 = "1.11.0-alpha07"
 navigationCompose = "2.9.2"
 
 [libraries]
+components-resources = { module = "org.jetbrains.compose.components:components-resources" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { module = "junit:junit", version.ref = "junit" }
