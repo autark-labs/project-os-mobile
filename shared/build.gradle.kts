@@ -34,6 +34,7 @@ kotlin {
         }
     }
 
+
     sourceSets {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
@@ -54,6 +55,12 @@ kotlin {
             implementation(libs.kotlin.test)
         }
     }
+}
+
+compose.resources {
+    publicResClass = false
+    packageOfResClass = "com.projectos.project_os_mobile.shared"
+    generateResClass = auto
 }
 
 dependencies {
