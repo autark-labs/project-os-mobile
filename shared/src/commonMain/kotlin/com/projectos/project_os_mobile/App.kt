@@ -18,7 +18,6 @@ enum class Routes {
 fun App() {
     val navController = rememberNavController()
 
-
     MaterialTheme {
         NavHost (navController = navController, startDestination = Routes.HOME.name) {
             composable(Routes.HOME.name)  { HomePage { navController.navigate(it) } }
