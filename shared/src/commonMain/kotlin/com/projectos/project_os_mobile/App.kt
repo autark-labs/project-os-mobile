@@ -17,11 +17,6 @@ import com.projectos.project_os_mobile.navigation.AppNavigationBar
 fun App() {
     val navController = rememberNavController()
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> e8b48acc2d8550d2b11a9999136cbcecfb12eb44
     MaterialTheme {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
