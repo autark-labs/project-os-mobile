@@ -3,7 +3,6 @@ package com.projectos.project_os_mobile.navigation
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,7 +12,6 @@ import com.projectos.project_os_mobile.shared.apps_icon
 import com.projectos.project_os_mobile.shared.home_icon
 import com.projectos.project_os_mobile.shared.settings_icon
 import org.jetbrains.compose.resources.DrawableResource
-import org.jetbrains.compose.resources.painterResource
 
 
 enum class Routes(val icon: DrawableResource, val label: String) {
