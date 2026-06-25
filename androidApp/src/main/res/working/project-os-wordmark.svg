@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="600" viewBox="0 0 1200 400" role="img" aria-labelledby="title desc">
+  <title id="title">Project-os Wordmark</title>
+  <desc id="desc">Horizontal Project-os wordmark with orbital icon and rounded technology lettering.</desc>
+
+  <defs>
+    <linearGradient id="wm-orbit-gradient" x1="120" y1="110" x2="390" y2="390" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6F45FF"/>
+      <stop offset="0.50" stop-color="#2B7CFF"/>
+      <stop offset="1" stop-color="#18BFEF"/>
+    </linearGradient>
+    <linearGradient id="wm-cyan-gradient" x1="0" y1="0" x2="512" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#18BFEF"/>
+      <stop offset="1" stop-color="#2B7CFF"/>
+    </linearGradient>
+    <linearGradient id="wm-purple-gradient" x1="80" y1="80" x2="430" y2="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8B4DFF"/>
+      <stop offset="1" stop-color="#2B7CFF"/>
+    </linearGradient>
+    <linearGradient id="wm-badge-bg" x1="96" y1="64" x2="440" y2="448" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#050C3D"/>
+      <stop offset="1" stop-color="#0B1B62"/>
+    </linearGradient>
+    <linearGradient id="wm-word-cyan" x1="0" y1="0" x2="260" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#18BFEF"/>
+      <stop offset="1" stop-color="#2B7CFF"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="400" fill="none"/>
+  <g transform="translate(56 60) scale(0.55)">
+    <path d="M 112.132 394.932 A 200 200 0 0 1 73.291 174.653" fill="none" stroke="#07124A" stroke-width="24" stroke-linecap="round"/>
+    <path d="M 107.371 122.174 A 200 200 0 0 1 448.252 200.873" fill="none" stroke="#07124A" stroke-width="24" stroke-linecap="round"/>
+    <path d="M 446.211 317.803 A 200 200 0 0 1 297.582 451.630" fill="none" stroke="#07124A" stroke-width="24" stroke-linecap="round"/>
+    <circle cx="384.558" cy="102.791" r="22" fill="#FFFFFF" stroke="#07124A" stroke-width="14"/>
+    <circle cx="94.197" cy="373.557" r="22" fill="#FFFFFF" stroke="#6F45FF" stroke-width="14"/>
+    <path d="M 173.028 348.150 A 124 124 0 0 1 228.106 135.178" fill="none" stroke="url(#wm-orbit-gradient)" stroke-width="22" stroke-linecap="round"/>
+    <path d="M 285.998 135.683 A 124 124 0 0 1 340.568 346.688" fill="none" stroke="url(#wm-orbit-gradient)" stroke-width="22" stroke-linecap="round"/>
+    <circle cx="132.000" cy="256.000" r="21" fill="#FFFFFF" stroke="#6F45FF" stroke-width="13"/>
+    <circle cx="369.280" cy="306.435" r="21" fill="#FFFFFF" stroke="#18BFEF" stroke-width="13"/>
+    <circle cx="256" cy="256" r="54" fill="none" stroke="#07124A" stroke-width="28"/>
+    <line x1="180" y1="256" x2="332" y2="256" stroke="#FFFFFF" stroke-width="13" stroke-linecap="round"/>
+    <circle cx="180" cy="256" r="17" fill="#18BFEF"/>
+    <circle cx="332" cy="256" r="17" fill="#18BFEF"/>
+    <circle cx="256" cy="101" r="9.5" fill="#18BFEF"/>
+    <circle cx="256" cy="124" r="9.5" fill="#18BFEF"/>
+    <circle cx="256" cy="388" r="9.5" fill="#18BFEF"/>
+    <circle cx="256" cy="411" r="9.5" fill="#18BFEF"/>
+  </g>
+  <text x="340" y="247" font-family="Sora, Inter, Montserrat, Avenir Next, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="132" font-weight="800" letter-spacing="-6" dominant-baseline="middle">
+    <tspan fill="#07124A">Project-</tspan><tspan fill="url(#wm-word-cyan)">os</tspan>
+  </text>
+</svg>

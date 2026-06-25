@@ -26,6 +26,7 @@ val STARTING_PAGE = Routes.APPS
 fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
     NavHost (navController = navController, startDestination = STARTING_PAGE.name, modifier = modifier) {
         composable(Routes.HOME.name)  { HomePage { navController.navigate(it) } }
-        composable(Routes.APPS.name)  { Text("Hello!") }
+        composable(Routes.APPS.name)  { Text("Hello Apps!") }
+        composable(Routes.SETTINGS.name)  { Text("Hello Settings!") }
     }
 }

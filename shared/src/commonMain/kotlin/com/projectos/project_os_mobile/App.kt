@@ -21,7 +21,7 @@ fun App() {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             bottomBar = {
-                AppNavigationBar()
+                AppNavigationBar(navController)
             }
         ) { contentPadding ->
             AppNavHost(navController, modifier = Modifier.padding(contentPadding))
