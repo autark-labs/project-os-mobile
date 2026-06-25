@@ -4,7 +4,7 @@
   <desc id="desc">Rounded-square Project-os app icon containing the orbital system mark.</desc>
 
   <defs>
-    <linearGradient id="app-orbit-gradient" x1="120" y1="110" x2="390" y2="390" gradientUnits="userSpaceOnUse">
+    <linearGradient id="app-orbit-gradient" x1="120" y1="110" x2="90" y2="390" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#6F45FF"/>
       <stop offset="0.50" stop-color="#2B7CFF"/>
       <stop offset="1" stop-color="#18BFEF"/>
@@ -37,11 +37,11 @@
     <path d="M 173.028 348.150 A 124 124 0 0 1 228.106 135.178" fill="none" stroke="url(#app-orbit-gradient)" stroke-width="22" stroke-linecap="round"/>
     <path d="M 285.998 135.683 A 124 124 0 0 1 340.568 346.688" fill="none" stroke="url(#app-orbit-gradient)" stroke-width="22" stroke-linecap="round"/>
     <circle cx="132.000" cy="256.000" r="21" fill="#07124A" stroke="#6F45FF" stroke-width="13"/>
-    <circle cx="369.280" cy="306.435" r="21" fill="#07124A" stroke="#18BFEF" stroke-width="13"/>
+    <circle cx="369.280" cy="320.435" r="21" fill="#07124A" stroke="#18BFEF" stroke-width="13"/>
     <circle cx="256" cy="256" r="54" fill="none" stroke="#FFFFFF" stroke-width="28"/>
     <line x1="180" y1="256" x2="332" y2="256" stroke="#07124A" stroke-width="13" stroke-linecap="round"/>
-    <circle cx="180" cy="256" r="17" fill="#18BFEF"/>
-    <circle cx="332" cy="256" r="17" fill="#18BFEF"/>
+    <circle cx="189" cy="256" r="17" fill="#18BFEF"/>
+    <circle cx="324" cy="256" r="17" fill="#18BFEF"/>
     <circle cx="256" cy="101" r="9.5" fill="#18BFEF"/>
     <circle cx="256" cy="124" r="9.5" fill="#18BFEF"/>
     <circle cx="256" cy="388" r="9.5" fill="#18BFEF"/>
