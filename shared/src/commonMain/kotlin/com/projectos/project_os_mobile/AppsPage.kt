@@ -8,18 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,14 +18,14 @@ import com.projectos.project_os_mobile.client.App
 import com.projectos.project_os_mobile.client.fetchApps
 import com.projectos.project_os_mobile.shared.Res
 import com.projectos.project_os_mobile.shared.compose_multiplatform
-import io.ktor.websocket.Frame
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 
+@Preview
 @Composable
-fun AppsPage(onClick: (toPage: String)-> Unit) {
+fun AppsPage() {
     var showContent by remember { mutableStateOf(false) }
 
     var appData by remember { mutableStateOf <List<App>>(emptyList()) }
@@ -54,6 +44,8 @@ fun AppsPage(onClick: (toPage: String)-> Unit) {
         }
     }
 
+    // Render
+    Text("My Services")
     Column(
         modifier = Modifier
             .background(MaterialTheme.colorScheme.primaryContainer)
@@ -61,9 +53,6 @@ fun AppsPage(onClick: (toPage: String)-> Unit) {
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Button(shape = RoundedCornerShape(12.dp), onClick = { onClick("HOME") }) {
-            Text("Click me!")
-        }
         Text("This be the apps page")
 
         SnackbarHost(hostState = snackbarHostState)
