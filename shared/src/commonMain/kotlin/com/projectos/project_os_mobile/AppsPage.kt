@@ -6,9 +6,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Card
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +60,15 @@ fun AppsPage(modifier: Modifier) {
         Text("My Services")
         Text("This be the apps page")
 
+        LazyColumn {
+            items(appData) {
+                ElevatedCard {
+                    Text(it.appName)
+                    Text("Hello :D!")
+                }
+            }
+        }
+
         SnackbarHost(hostState = snackbarHostState)
 
         AnimatedVisibility(showContent) {
@@ -65,5 +81,13 @@ fun AppsPage(modifier: Modifier) {
                 Text("Compose: $greeting")
             }
         }
+    }
+}
+
+@Preview
+@Composable
+fun AppsPagePreview() {
+    MaterialTheme {
+        AppsPage(modifier = Modifier.padding(5.dp))
     }
 }
