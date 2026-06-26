@@ -1,6 +1,13 @@
 package com.projectos.project_os_mobile.client
 
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.get
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import java.io.Serial
 import kotlin.time.Instant
 
@@ -45,3 +52,17 @@ data class App(
     val appTelemetry: AppTelemetry,
     val healthSnapshot: AppHealthSnapshot
 )
+
+val client = HttpClient(CIO) {
+    install(ContentNegotiation) {
+        json(Json {
+            ignoreUnknownKeys = true
+            prettyPrint = true
+        })
+    }
+}
+
+suspend fun fetchApps(): List<App> {
+    val response: List<App> = client.get("http://localhost:8082/api/apps").body()
+    return response
+}
