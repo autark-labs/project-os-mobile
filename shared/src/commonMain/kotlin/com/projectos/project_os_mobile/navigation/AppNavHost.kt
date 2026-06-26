@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.projectos.project_os_mobile.AppsPage
 import com.projectos.project_os_mobile.HomePage
 import com.projectos.project_os_mobile.shared.Res
 import com.projectos.project_os_mobile.shared.apps_icon
@@ -26,7 +27,7 @@ val STARTING_PAGE = Routes.APPS
 fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
     NavHost (navController = navController, startDestination = STARTING_PAGE.name, modifier = modifier) {
         composable(Routes.HOME.name)  { HomePage { navController.navigate(it) } }
-        composable(Routes.APPS.name)  { Text("Hello Apps!") }
+        composable(Routes.APPS.name)  { AppsPage {navController.navigate(it)} }
         composable(Routes.SETTINGS.name)  { Text("Hello Settings!") }
     }
 }

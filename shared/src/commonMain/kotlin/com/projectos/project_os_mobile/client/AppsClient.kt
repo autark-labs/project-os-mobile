@@ -6,6 +6,7 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.Serial
@@ -16,8 +17,8 @@ data class AppTelemetry(
     val cpuPercent: String,
     val memoryUsage: String,
     val networkIo: String,
-    val blockId: String,
-    val checkedAt: Instant
+    val blockIo: String,
+    @Contextual val checkedAt: Instant
 )
 
 @Serializable
@@ -30,7 +31,7 @@ data class AppHealthSnapshot (
     val localAccessStatus: String,
     val privateAccessStatus: String,
     val startupGrace: Boolean,
-    val checkedAt: Instant
+    @Contextual val checkedAt: Instant
 )
 
 @Serializable
@@ -47,9 +48,9 @@ data class App(
     val runtimePath: String,
     val composeProject: String,
     val accessUrl: String,
-    val installedAt: Instant,
+    @Contextual val installedAt: Instant,
     val lastBackup: String,
-    val appTelemetry: AppTelemetry,
+    val telemetry: AppTelemetry,
     val healthSnapshot: AppHealthSnapshot
 )
 
@@ -63,6 +64,6 @@ val client = HttpClient(CIO) {
 }
 
 suspend fun fetchApps(): List<App> {
-    val response: List<App> = client.get("http://localhost:8082/api/apps").body()
-    return response
+    val res: List<App> = client.get("http://10.0.2.2:8082/api/apps").body()
+    return res
 }
