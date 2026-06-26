@@ -23,9 +23,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 
-@Preview
 @Composable
-fun AppsPage() {
+fun AppsPage(modifier: Modifier) {
     var showContent by remember { mutableStateOf(false) }
 
     var appData by remember { mutableStateOf <List<App>>(emptyList()) }
@@ -44,15 +43,14 @@ fun AppsPage() {
         }
     }
 
-    // Render
-    Text("My Services")
     Column(
-        modifier = Modifier
+        modifier = modifier
             .background(MaterialTheme.colorScheme.primaryContainer)
             .safeContentPadding()
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Text("My Services")
         Text("This be the apps page")
 
         SnackbarHost(hostState = snackbarHostState)

@@ -25,7 +25,7 @@ import com.projectos.project_os_mobile.shared.compose_multiplatform
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
-fun HomePage(onClick: (toPage: String)-> Unit) {
+fun HomePage(modifier: Modifier = Modifier, onClick: (toPage: String)-> Unit) {
     var showContent by remember { mutableStateOf(false) }
 
     Column(

@@ -64,6 +64,11 @@ val client = HttpClient(CIO) {
 }
 
 suspend fun fetchApps(): List<App> {
-    val res: List<App> = client.get("http://10.0.2.2:8082/api/apps").body()
-    return res
+    try {
+        val res: List<App> = client.get("http://10.0.2.2:8082/api/apps").body()
+        return res
+    }
+    catch (_: Exception) {
+        return emptyList()
+    }
 }
