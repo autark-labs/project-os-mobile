@@ -20,7 +20,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -38,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -89,9 +89,9 @@ fun AppsPage(modifier: Modifier) {
         modifier = modifier
             .background(Brush.verticalGradient(listOf(ScreenTop, ScreenBottom)))
             .safeContentPadding()
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = 16.dp)
             .fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         ServicesHeader(baseUrl = baseUrl, onRefresh = { refreshTick++ })
         SummaryCards(services)
@@ -115,7 +115,7 @@ fun AppsPage(modifier: Modifier) {
 @Composable
 private fun ServicesHeader(baseUrl: String, onRefresh: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 18.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -123,7 +123,7 @@ private fun ServicesHeader(baseUrl: String, onRefresh: () -> Unit) {
             Text(
                 text = "My Services",
                 color = Graphite,
-                style = MaterialTheme.typography.headlineLarge,
+                style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.ExtraBold,
             )
             Text(
@@ -141,8 +141,8 @@ private fun ServicesHeader(baseUrl: String, onRefresh: () -> Unit) {
         }
         ElevatedButton(
             onClick = onRefresh,
-            modifier = Modifier.size(54.dp),
-            shape = RoundedCornerShape(18.dp),
+            modifier = Modifier.size(46.dp),
+            shape = RoundedCornerShape(16.dp),
             contentPadding = PaddingValues(0.dp),
             colors = ButtonDefaults.elevatedButtonColors(containerColor = Color.White, contentColor = Cobalt),
         ) {
@@ -197,18 +197,18 @@ private fun SummaryCard(
     accent: Color,
 ) {
     ElevatedCard(
-        modifier = modifier.height(124.dp),
-        shape = RoundedCornerShape(22.dp),
+        modifier = modifier.height(92.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(14.dp),
+            modifier = Modifier.fillMaxSize().padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Box(
-                modifier = Modifier.size(54.dp).clip(RoundedCornerShape(18.dp)).background(accent.copy(alpha = 0.11f)),
+                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(15.dp)).background(accent.copy(alpha = 0.11f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(iconText, color = accent, fontWeight = FontWeight.ExtraBold)
@@ -218,7 +218,7 @@ private fun SummaryCard(
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(title, color = MutedText, style = MaterialTheme.typography.labelLarge)
-                Text(value, color = accent, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(value, color = accent, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(detail, color = MutedText, style = MaterialTheme.typography.labelMedium, maxLines = 1)
             }
             Text(">", color = MutedText, fontWeight = FontWeight.Bold)
@@ -233,20 +233,20 @@ private fun SearchAndFilters(
     selectedFilter: ServiceFilter,
     onFilterSelected: (ServiceFilter) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
                 value = query,
                 onValueChange = onQueryChange,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).height(52.dp),
                 singleLine = true,
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(17.dp),
                 placeholder = { Text("Search services...") },
             )
             ElevatedButton(
                 onClick = {},
-                modifier = Modifier.height(56.dp),
-                shape = RoundedCornerShape(18.dp),
+                modifier = Modifier.height(52.dp),
+                shape = RoundedCornerShape(17.dp),
                 colors = ButtonDefaults.elevatedButtonColors(containerColor = Color.White, contentColor = Slate),
             ) {
                 Text("Filter")
@@ -259,7 +259,7 @@ private fun SearchAndFilters(
             tonalElevation = 1.dp,
             shadowElevation = 2.dp,
         ) {
-            Row(modifier = Modifier.padding(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(modifier = Modifier.padding(3.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 ServiceFilter.entries.forEach { filter ->
                     FilterTab(
                         modifier = Modifier.weight(1f),
@@ -280,7 +280,7 @@ private fun FilterTab(modifier: Modifier, filter: ServiceFilter, selected: Boole
             .clip(RoundedCornerShape(16.dp))
             .background(if (selected) Cobalt else Color.Transparent)
             .clickable(onClick = onClick)
-            .padding(vertical = 11.dp),
+            .padding(vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -304,7 +304,7 @@ private fun ServicesList(services: List<ServiceCardModel>) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(9.dp),
     ) {
         items(services, key = { it.id }) { service ->
             ServiceCard(service)
@@ -314,14 +314,16 @@ private fun ServicesList(services: List<ServiceCardModel>) {
 
 @Composable
 private fun ServiceCard(service: ServiceCardModel) {
+    val uriHandler = LocalUriHandler.current
+
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ServiceIcon(service)
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
@@ -342,11 +344,11 @@ private fun ServiceCard(service: ServiceCardModel) {
                 }
                 StatusChip(service.status)
                 Button(
-                    onClick = {},
+                    onClick = { uriHandler.openUri(service.url) },
                     enabled = service.url.isNotBlank(),
-                    modifier = Modifier.height(44.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp),
+                    modifier = Modifier.height(36.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Cobalt),
                 ) {
                     Text("Open", style = MaterialTheme.typography.labelMedium)
@@ -361,7 +363,7 @@ private fun ServiceCard(service: ServiceCardModel) {
 @Composable
 private fun ServiceIcon(service: ServiceCardModel) {
     Box(
-        modifier = Modifier.size(54.dp).clip(RoundedCornerShape(18.dp)).background(service.status.accent.copy(alpha = 0.12f)),
+        modifier = Modifier.size(46.dp).clip(RoundedCornerShape(15.dp)).background(service.status.accent.copy(alpha = 0.12f)),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -375,15 +377,20 @@ private fun ServiceIcon(service: ServiceCardModel) {
 
 @Composable
 private fun StatusChip(status: ServiceStatus) {
-    AssistChip(
-        onClick = {},
-        label = { Text(status.label, color = status.accent, fontWeight = FontWeight.Bold) },
-        leadingIcon = {
-            Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(status.accent))
-        },
-        border = null,
-        colors = androidx.compose.material3.AssistChipDefaults.assistChipColors(containerColor = status.accent.copy(alpha = 0.10f)),
-    )
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = status.accent.copy(alpha = 0.10f),
+        contentColor = status.accent,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Box(modifier = Modifier.size(7.dp).clip(CircleShape).background(status.accent))
+            Text(status.label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+        }
+    }
 }
 
 @Composable
@@ -397,7 +404,7 @@ private fun MetricsRow(service: ServiceCardModel) {
         MetricDivider()
         Metric("CPU", service.cpuLabel, Slate)
         MetricDivider()
-        Metric("Memory", service.memoryLabel, Slate)
+        Metric("Mem", service.memoryLabel, Slate)
     }
 }
 
