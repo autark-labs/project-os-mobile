@@ -212,7 +212,7 @@ private fun SummaryCard(
     accent: Color,
 ) {
     ElevatedCard(
-        modifier = modifier.height(74.dp),
+        modifier = modifier.height(86.dp),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
@@ -223,7 +223,7 @@ private fun SummaryCard(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Box(
-                modifier = Modifier.size(36.dp).clip(RoundedCornerShape(12.dp)).background(accent.copy(alpha = 0.11f)),
+                modifier = Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(accent.copy(alpha = 0.11f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(iconText, color = accent, fontWeight = FontWeight.ExtraBold)
@@ -259,7 +259,7 @@ private fun SearchAndFilters(
             OutlinedTextField(
                 value = query,
                 onValueChange = onQueryChange,
-                modifier = Modifier.weight(1f).height(46.dp),
+                modifier = Modifier.weight(1f).height(56.dp),
                 singleLine = true,
                 shape = RoundedCornerShape(15.dp),
                 placeholder = { Text("Search services...") },
@@ -267,7 +267,7 @@ private fun SearchAndFilters(
             ElevatedButton(
                 onClick = onClearFilters,
                 enabled = hasActiveFilters,
-                modifier = Modifier.height(46.dp),
+                modifier = Modifier.height(48.dp),
                 shape = RoundedCornerShape(15.dp),
                 colors = ButtonDefaults.elevatedButtonColors(containerColor = Color.White, contentColor = Slate),
             ) {
@@ -546,7 +546,8 @@ private fun App.toServiceCardModel(): ServiceCardModel {
         ?: observedAccess?.privateUrl
         ?: accessUrl
         ?: ""
-    val normalizedStatus = normalizedStatus()
+    val displayStatus = displayStatus()
+    val normalizedStatus = displayStatus.toServiceStatus()
     val appTelemetry = telemetry
     return ServiceCardModel(
         id = appId.ifBlank { appName },
@@ -554,21 +555,46 @@ private fun App.toServiceCardModel(): ServiceCardModel {
         category = category,
         url = bestUrl,
         status = normalizedStatus,
-        healthLabel = healthSnapshot?.status?.ifBlank { friendlyStatus } ?: friendlyStatus.ifBlank { normalizedStatus.label },
+        healthLabel = displayStatus,
         cpuLabel = appTelemetry?.cpuPercent?.ifBlank { "Unavailable" } ?: "Unavailable",
         memoryLabel = appTelemetry?.memoryUsage?.ifBlank { appTelemetry.memoryPercent } ?: "Unavailable",
     )
 }
 
-private fun App.normalizedStatus(): ServiceStatus {
-    val source = listOfNotNull(healthSnapshot?.status, friendlyStatus, technicalStatus, healthSnapshot?.dockerStatus)
-        .joinToString(" ")
-        .lowercase()
+private fun App.displayStatus(): String {
+    canonicalUserStatus?.takeIf { it.isNotBlank() }?.let { return it }
+    if (isPrivateAccessOnlyWarning()) {
+        return normalizeDisplayStatus(friendlyStatus.ifBlank { "Ready" })
+    }
+    healthSnapshot?.status?.takeIf { it.isNotBlank() }?.let { return normalizeDisplayStatus(it) }
+    return normalizeDisplayStatus(friendlyStatus)
+}
+
+private fun normalizeDisplayStatus(status: String?): String {
+    return when {
+        status.isNullOrBlank() -> "Starting"
+        status == "Stopped" -> "Paused"
+        else -> status
+    }
+}
+
+private fun App.isPrivateAccessOnlyWarning(): Boolean {
+    val health = healthSnapshot ?: return false
+    if (health.status != "Needs attention") return false
+    val appLooksReady = friendlyStatus.isBlank() || friendlyStatus == "Ready"
+    val containerLooksReady = health.dockerStatus.isBlank() || health.dockerStatus == "Ready"
+    val localAccessWorks = health.localAccessStatus == "reachable" || health.localAccessStatus == "not_configured"
+    val privateAccessProblem = health.privateAccessStatus in setOf("missing", "unreachable", "not_configured")
+    return appLooksReady && containerLooksReady && localAccessWorks && privateAccessProblem
+}
+
+private fun String.toServiceStatus(): ServiceStatus {
+    val source = lowercase()
     return when {
         "ready" in source || "healthy" in source || "running" in source -> ServiceStatus.Online
         "starting" in source || "updating" in source || "installing" in source -> ServiceStatus.Updating
         "needs" in source || "unhealthy" in source || "degraded" in source -> ServiceStatus.Unhealthy
-        "stopped" in source || "offline" in source || "unavailable" in source || "missing" in source -> ServiceStatus.Offline
+        "paused" in source || "stopped" in source || "offline" in source || "unavailable" in source || "missing" in source -> ServiceStatus.Offline
         else -> ServiceStatus.Unknown
     }
 }

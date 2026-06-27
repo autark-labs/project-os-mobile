@@ -76,7 +76,12 @@ data class App(
     val installedAt: String = "",
     val lastBackup: String = "",
     val telemetry: AppTelemetry? = null,
-    val healthSnapshot: AppHealthSnapshot? = null
+    val healthSnapshot: AppHealthSnapshot? = null,
+    val canonicalUserStatus: String? = null,
+    val canonicalRuntimeState: String? = null,
+    val canonicalOwnershipState: String? = null,
+    val canonicalAccessState: String? = null,
+    val canonicalBackupState: String? = null
 )
 
 sealed interface AppsFetchResult {
