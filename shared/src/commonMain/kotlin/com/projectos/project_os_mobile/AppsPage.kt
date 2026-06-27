@@ -1,88 +1,514 @@
 package com.projectos.project_os_mobile
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.projectos.project_os_mobile.client.App
+import com.projectos.project_os_mobile.client.AppsFetchResult
 import com.projectos.project_os_mobile.client.fetchApps
-import com.projectos.project_os_mobile.shared.Res
-import com.projectos.project_os_mobile.shared.compose_multiplatform
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun AppsPage(modifier: Modifier) {
-    var showContent by remember { mutableStateOf(false) }
+    var services by remember { mutableStateOf<List<ServiceCardModel>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedFilter by remember { mutableStateOf(ServiceFilter.All) }
+    var refreshTick by remember { mutableStateOf(0) }
 
-    var appData by remember { mutableStateOf <List<App>>(emptyList()) }
+    LaunchedEffect(refreshTick) {
+        isLoading = true
+        errorMessage = null
+        when (val result = fetchApps()) {
+            is AppsFetchResult.Success -> services = result.apps.map { it.toServiceCardModel() }
+            is AppsFetchResult.Failure -> errorMessage = result.message
+        }
+        isLoading = false
+    }
 
-    // Compose states
-    val snackbarHostState = remember { SnackbarHostState() }
+    val filteredServices = remember(services, searchQuery, selectedFilter) {
+        services.filter { service ->
+            val matchesQuery = searchQuery.isBlank() ||
+                service.name.contains(searchQuery, ignoreCase = true) ||
+                service.id.contains(searchQuery, ignoreCase = true) ||
+                service.url.contains(searchQuery, ignoreCase = true) ||
+                service.category.contains(searchQuery, ignoreCase = true)
 
-    LaunchedEffect("apps") {
-        val scope = CoroutineScope(Dispatchers.IO)
-
-        scope.launch {
-            appData = fetchApps()
-            scope.launch {
-                snackbarHostState.showSnackbar(appData.toString())
+            val matchesFilter = when (selectedFilter) {
+                ServiceFilter.All -> true
+                ServiceFilter.Online -> service.status == ServiceStatus.Online
+                ServiceFilter.Offline -> service.status != ServiceStatus.Online
             }
+
+            matchesQuery && matchesFilter
         }
     }
 
     Column(
         modifier = modifier
-            .background(MaterialTheme.colorScheme.primaryContainer)
+            .background(Brush.verticalGradient(listOf(ScreenTop, ScreenBottom)))
             .safeContentPadding()
+            .padding(horizontal = 20.dp)
             .fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text("My Services")
-        Text("This be the apps page")
+        ServicesHeader(onRefresh = { refreshTick++ })
+        SummaryCards(services)
+        SearchAndFilters(
+            query = searchQuery,
+            onQueryChange = { searchQuery = it },
+            selectedFilter = selectedFilter,
+            onFilterSelected = { selectedFilter = it },
+        )
 
-        LazyColumn {
-            items(appData) {
-                ElevatedCard {
-                    Text(it.appName)
-                    Text("Hello :D!")
-                }
+        when {
+            isLoading -> LoadingPanel()
+            errorMessage != null -> ErrorPanel(errorMessage.orEmpty(), onRetry = { refreshTick++ })
+            services.isEmpty() -> EmptyPanel("No installed services were returned by Project-os.")
+            filteredServices.isEmpty() -> EmptyPanel("No services match the current search and filter.")
+            else -> ServicesList(filteredServices)
+        }
+    }
+}
+
+@Composable
+private fun ServicesHeader(onRefresh: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "My Services",
+                color = Graphite,
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.ExtraBold,
+            )
+            Text(
+                text = "Monitor and manage your Project-os services",
+                color = MutedText,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+        ElevatedButton(
+            onClick = onRefresh,
+            modifier = Modifier.size(54.dp),
+            shape = RoundedCornerShape(18.dp),
+            contentPadding = PaddingValues(0.dp),
+            colors = ButtonDefaults.elevatedButtonColors(containerColor = Color.White, contentColor = Cobalt),
+        ) {
+            Text("R", fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun SummaryCards(services: List<ServiceCardModel>) {
+    val installedCount = services.size
+    val unhealthyCount = services.count { it.status != ServiceStatus.Online }
+    val healthLabel = when {
+        services.isEmpty() -> "Waiting"
+        unhealthyCount == 0 -> "Excellent"
+        unhealthyCount == 1 -> "Review"
+        else -> "Attention"
+    }
+    val healthDetail = when {
+        services.isEmpty() -> "No services loaded"
+        unhealthyCount == 0 -> "All services healthy"
+        else -> "$unhealthyCount service${if (unhealthyCount == 1) "" else "s"} need review"
+    }
+
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        SummaryCard(
+            modifier = Modifier.weight(1f),
+            iconText = "4",
+            title = "Installed Apps",
+            value = installedCount.toString(),
+            detail = "All systems go",
+            accent = Cobalt,
+        )
+        SummaryCard(
+            modifier = Modifier.weight(1f),
+            iconText = "H",
+            title = "System Health",
+            value = healthLabel,
+            detail = healthDetail,
+            accent = if (unhealthyCount == 0 && services.isNotEmpty()) OnlineGreen else WarningOrange,
+        )
+    }
+}
+
+@Composable
+private fun SummaryCard(
+    modifier: Modifier,
+    iconText: String,
+    title: String,
+    value: String,
+    detail: String,
+    accent: Color,
+) {
+    ElevatedCard(
+        modifier = modifier.height(124.dp),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize().padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier.size(54.dp).clip(RoundedCornerShape(18.dp)).background(accent.copy(alpha = 0.11f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(iconText, color = accent, fontWeight = FontWeight.ExtraBold)
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                Text(title, color = MutedText, style = MaterialTheme.typography.labelLarge)
+                Text(value, color = accent, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(detail, color = MutedText, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+            }
+            Text(">", color = MutedText, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun SearchAndFilters(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    selectedFilter: ServiceFilter,
+    onFilterSelected: (ServiceFilter) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                shape = RoundedCornerShape(18.dp),
+                placeholder = { Text("Search services...") },
+            )
+            ElevatedButton(
+                onClick = {},
+                modifier = Modifier.height(56.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.elevatedButtonColors(containerColor = Color.White, contentColor = Slate),
+            ) {
+                Text("Filter")
             }
         }
-
-        SnackbarHost(hostState = snackbarHostState)
-
-        AnimatedVisibility(showContent) {
-            val greeting = remember { Greeting().greet() }
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Image(painterResource(Res.drawable.compose_multiplatform), null)
-                Text("Compose: $greeting")
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            color = Color.White,
+            tonalElevation = 1.dp,
+            shadowElevation = 2.dp,
+        ) {
+            Row(modifier = Modifier.padding(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                ServiceFilter.entries.forEach { filter ->
+                    FilterTab(
+                        modifier = Modifier.weight(1f),
+                        filter = filter,
+                        selected = selectedFilter == filter,
+                        onClick = { onFilterSelected(filter) },
+                    )
+                }
             }
         }
     }
 }
+
+@Composable
+private fun FilterTab(modifier: Modifier, filter: ServiceFilter, selected: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (selected) Cobalt else Color.Transparent)
+            .clickable(onClick = onClick)
+            .padding(vertical = 11.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (filter != ServiceFilter.All) {
+                Box(
+                    modifier = Modifier.size(8.dp).clip(CircleShape)
+                        .background(if (filter == ServiceFilter.Online) OnlineGreen else OfflineRed)
+                )
+            }
+            Text(
+                text = filter.label,
+                color = if (selected) Color.White else MutedText,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ServicesList(services: List<ServiceCardModel>) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        items(services, key = { it.id }) { service ->
+            ServiceCard(service)
+        }
+    }
+}
+
+@Composable
+private fun ServiceCard(service: ServiceCardModel) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                ServiceIcon(service)
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        service.name,
+                        color = Graphite,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        service.url.ifBlank { "No service link configured" },
+                        color = if (service.url.isBlank()) MutedText else Cobalt,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                StatusChip(service.status)
+                Button(
+                    onClick = {},
+                    enabled = service.url.isNotBlank(),
+                    modifier = Modifier.height(44.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Cobalt),
+                ) {
+                    Text("Open", style = MaterialTheme.typography.labelMedium)
+                }
+            }
+            HorizontalDivider(color = Border)
+            MetricsRow(service)
+        }
+    }
+}
+
+@Composable
+private fun ServiceIcon(service: ServiceCardModel) {
+    Box(
+        modifier = Modifier.size(54.dp).clip(RoundedCornerShape(18.dp)).background(service.status.accent.copy(alpha = 0.12f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = service.name.firstOrNull()?.uppercase() ?: "?",
+            color = service.status.accent,
+            fontWeight = FontWeight.ExtraBold,
+            style = MaterialTheme.typography.titleLarge,
+        )
+    }
+}
+
+@Composable
+private fun StatusChip(status: ServiceStatus) {
+    AssistChip(
+        onClick = {},
+        label = { Text(status.label, color = status.accent, fontWeight = FontWeight.Bold) },
+        leadingIcon = {
+            Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(status.accent))
+        },
+        border = null,
+        colors = androidx.compose.material3.AssistChipDefaults.assistChipColors(containerColor = status.accent.copy(alpha = 0.10f)),
+    )
+}
+
+@Composable
+private fun MetricsRow(service: ServiceCardModel) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceEvenly,
+    ) {
+        Metric("Health", service.healthLabel, service.status.accent)
+        MetricDivider()
+        Metric("CPU", service.cpuLabel, Slate)
+        MetricDivider()
+        Metric("Memory", service.memoryLabel, Slate)
+    }
+}
+
+@Composable
+private fun Metric(label: String, value: String, accent: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(accent))
+        Text(label, color = MutedText, style = MaterialTheme.typography.labelMedium)
+        Text(value, color = Graphite, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun MetricDivider() {
+    Box(modifier = Modifier.fillMaxHeight().width(1.dp).background(Border))
+}
+
+@Composable
+private fun LoadingPanel() {
+    StatePanel(title = "Loading services", body = "Checking your Project-os instance.") {
+        LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = Cobalt)
+    }
+}
+
+@Composable
+private fun ErrorPanel(message: String, onRetry: () -> Unit) {
+    StatePanel(title = "Could not load services", body = message) {
+        Button(onClick = onRetry, colors = ButtonDefaults.buttonColors(containerColor = Cobalt)) {
+            Text("Retry")
+        }
+    }
+}
+
+@Composable
+private fun EmptyPanel(message: String) {
+    StatePanel(title = "Nothing to show", body = message)
+}
+
+@Composable
+private fun StatePanel(title: String, body: String, action: @Composable (() -> Unit)? = null) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+    ) {
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(title, color = Graphite, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(body, color = MutedText, style = MaterialTheme.typography.bodyMedium)
+            action?.invoke()
+        }
+    }
+}
+
+private data class ServiceCardModel(
+    val id: String,
+    val name: String,
+    val category: String,
+    val url: String,
+    val status: ServiceStatus,
+    val healthLabel: String,
+    val cpuLabel: String,
+    val memoryLabel: String,
+)
+
+private enum class ServiceFilter(val label: String) {
+    All("All"),
+    Online("Online"),
+    Offline("Offline"),
+}
+
+private enum class ServiceStatus(val label: String, val accent: Color) {
+    Online("Online", OnlineGreen),
+    Offline("Offline", OfflineRed),
+    Updating("Updating", Cobalt),
+    Unhealthy("Unhealthy", WarningOrange),
+    Unknown("Unknown", MutedText),
+}
+
+private fun App.toServiceCardModel(): ServiceCardModel {
+    val bestUrl = accessRoute?.primaryOpenUrl
+        ?: accessRoute?.privateUrl
+        ?: observedAccess?.privateUrl
+        ?: accessUrl
+        ?: ""
+    val normalizedStatus = normalizedStatus()
+    return ServiceCardModel(
+        id = appId.ifBlank { appName },
+        name = appName.ifBlank { appId.ifBlank { "Unknown service" } },
+        category = category,
+        url = bestUrl,
+        status = normalizedStatus,
+        healthLabel = healthSnapshot?.status?.ifBlank { friendlyStatus } ?: friendlyStatus.ifBlank { normalizedStatus.label },
+        cpuLabel = telemetry?.cpuPercent?.ifBlank { "Unavailable" } ?: "Unavailable",
+        memoryLabel = telemetry?.memoryUsage?.ifBlank { telemetry?.memoryPercent ?: "Unavailable" } ?: "Unavailable",
+    )
+}
+
+private fun App.normalizedStatus(): ServiceStatus {
+    val source = listOfNotNull(healthSnapshot?.status, friendlyStatus, technicalStatus, healthSnapshot?.dockerStatus)
+        .joinToString(" ")
+        .lowercase()
+    return when {
+        "ready" in source || "healthy" in source || "running" in source -> ServiceStatus.Online
+        "starting" in source || "updating" in source || "installing" in source -> ServiceStatus.Updating
+        "needs" in source || "unhealthy" in source || "degraded" in source -> ServiceStatus.Unhealthy
+        "stopped" in source || "offline" in source || "unavailable" in source || "missing" in source -> ServiceStatus.Offline
+        else -> ServiceStatus.Unknown
+    }
+}
+
+private val ScreenTop = Color(0xFFFBFCFF)
+private val ScreenBottom = Color(0xFFF3F6FA)
+private val Graphite = Color(0xFF12182B)
+private val Slate = Color(0xFF647087)
+private val MutedText = Color(0xFF748096)
+private val Border = Color(0xFFE5EAF2)
+private val Cobalt = Color(0xFF2F5CC8)
+private val OnlineGreen = Color(0xFF2FBF71)
+private val OfflineRed = Color(0xFFFF5A45)
+private val WarningOrange = Color(0xFFF59E0B)
 
 @Preview
 @Composable
