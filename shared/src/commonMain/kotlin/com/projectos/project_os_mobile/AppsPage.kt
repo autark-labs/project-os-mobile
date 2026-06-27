@@ -65,7 +65,7 @@ fun AppsPage(modifier: Modifier) {
         isLoading = true
         errorMessage = null
         when (val result = fetchApps(baseUrl)) {
-            is AppsFetchResult.Success -> services = result.apps.map { it.toServiceCardModel() }
+            is AppsFetchResult.Success -> services = result.apps.map { it.toServiceCardModel(baseUrl) }
             is AppsFetchResult.Failure -> errorMessage = result.message
         }
         isLoading = false
@@ -413,11 +413,12 @@ private fun ServiceIcon(service: ServiceCardModel) {
         modifier = Modifier.size(38.dp).clip(RoundedCornerShape(13.dp)).background(service.status.accent.copy(alpha = 0.12f)),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = service.name.firstOrNull()?.uppercase() ?: "?",
-            color = service.status.accent,
-            fontWeight = FontWeight.ExtraBold,
-            style = MaterialTheme.typography.titleMedium,
+        CachedServiceIcon(
+            iconUrl = service.iconUrl,
+            cacheKey = service.id,
+            fallbackText = service.name.firstOrNull()?.uppercase() ?: "?",
+            tint = service.status.accent,
+            modifier = Modifier.size(30.dp),
         )
     }
 }
@@ -520,6 +521,7 @@ private data class ServiceCardModel(
     val name: String,
     val category: String,
     val url: String,
+    val iconUrl: String,
     val status: ServiceStatus,
     val healthLabel: String,
     val cpuLabel: String,
@@ -540,12 +542,13 @@ private enum class ServiceStatus(val label: String, val accent: Color) {
     Unknown("Unknown", MutedText),
 }
 
-private fun App.toServiceCardModel(): ServiceCardModel {
+private fun App.toServiceCardModel(baseUrl: String): ServiceCardModel {
     val bestUrl = accessRoute?.primaryOpenUrl
         ?: accessRoute?.privateUrl
         ?: observedAccess?.privateUrl
         ?: accessUrl
         ?: ""
+    val resolvedIconUrl = image?.toAbsoluteProjectOsUrl(baseUrl).orEmpty()
     val displayStatus = displayStatus()
     val normalizedStatus = displayStatus.toServiceStatus()
     val appTelemetry = telemetry
@@ -554,11 +557,20 @@ private fun App.toServiceCardModel(): ServiceCardModel {
         name = appName.ifBlank { appId.ifBlank { "Unknown service" } },
         category = category,
         url = bestUrl,
+        iconUrl = resolvedIconUrl,
         status = normalizedStatus,
         healthLabel = displayStatus,
         cpuLabel = appTelemetry?.cpuPercent?.ifBlank { "Unavailable" } ?: "Unavailable",
         memoryLabel = appTelemetry?.memoryUsage?.ifBlank { appTelemetry.memoryPercent } ?: "Unavailable",
     )
+}
+
+private fun String.toAbsoluteProjectOsUrl(baseUrl: String): String {
+    val trimmed = trim()
+    if (trimmed.isBlank()) return ""
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed
+    if (trimmed.startsWith("/")) return "${baseUrl.trimEnd('/')}$trimmed"
+    return "${baseUrl.trimEnd('/')}/$trimmed"
 }
 
 private fun App.displayStatus(): String {
