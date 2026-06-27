@@ -99,6 +99,13 @@ fun AppsPage(modifier: Modifier) {
             onQueryChange = { searchQuery = it },
             selectedFilter = selectedFilter,
             onFilterSelected = { selectedFilter = it },
+            allCount = services.size,
+            onlineCount = services.count { it.status == ServiceStatus.Online },
+            offlineCount = services.count { it.status != ServiceStatus.Online },
+            onClearFilters = {
+                searchQuery = ""
+                selectedFilter = ServiceFilter.All
+            },
         )
 
         when {
@@ -231,7 +238,13 @@ private fun SearchAndFilters(
     onQueryChange: (String) -> Unit,
     selectedFilter: ServiceFilter,
     onFilterSelected: (ServiceFilter) -> Unit,
+    allCount: Int,
+    onlineCount: Int,
+    offlineCount: Int,
+    onClearFilters: () -> Unit,
 ) {
+    val hasActiveFilters = query.isNotBlank() || selectedFilter != ServiceFilter.All
+
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
@@ -243,12 +256,13 @@ private fun SearchAndFilters(
                 placeholder = { Text("Search services...") },
             )
             ElevatedButton(
-                onClick = {},
+                onClick = onClearFilters,
+                enabled = hasActiveFilters,
                 modifier = Modifier.height(46.dp),
                 shape = RoundedCornerShape(15.dp),
                 colors = ButtonDefaults.elevatedButtonColors(containerColor = Color.White, contentColor = Slate),
             ) {
-                Text("Filter")
+                Text(if (hasActiveFilters) "Clear" else "Filter")
             }
         }
         Surface(
@@ -263,6 +277,11 @@ private fun SearchAndFilters(
                     FilterTab(
                         modifier = Modifier.weight(1f),
                         filter = filter,
+                        count = when (filter) {
+                            ServiceFilter.All -> allCount
+                            ServiceFilter.Online -> onlineCount
+                            ServiceFilter.Offline -> offlineCount
+                        },
                         selected = selectedFilter == filter,
                         onClick = { onFilterSelected(filter) },
                     )
@@ -273,7 +292,7 @@ private fun SearchAndFilters(
 }
 
 @Composable
-private fun FilterTab(modifier: Modifier, filter: ServiceFilter, selected: Boolean, onClick: () -> Unit) {
+private fun FilterTab(modifier: Modifier, filter: ServiceFilter, count: Int, selected: Boolean, onClick: () -> Unit) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
@@ -290,9 +309,10 @@ private fun FilterTab(modifier: Modifier, filter: ServiceFilter, selected: Boole
                 )
             }
             Text(
-                text = filter.label,
+                text = "${filter.label} $count",
                 color = if (selected) Color.White else MutedText,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                maxLines = 1,
             )
         }
     }
