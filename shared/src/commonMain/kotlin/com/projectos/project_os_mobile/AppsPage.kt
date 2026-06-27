@@ -29,6 +29,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -46,6 +48,7 @@ import com.projectos.project_os_mobile.client.App
 import com.projectos.project_os_mobile.client.AppsFetchResult
 import com.projectos.project_os_mobile.client.fetchApps
 import com.projectos.project_os_mobile.connection.ProjectOsConnection
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppsPage(modifier: Modifier) {
@@ -56,6 +59,7 @@ fun AppsPage(modifier: Modifier) {
     var selectedFilter by remember { mutableStateOf(ServiceFilter.All) }
     var refreshTick by remember { mutableStateOf(0) }
     val baseUrl = ProjectOsConnection.baseUrl
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(refreshTick, baseUrl) {
         isLoading = true
@@ -113,8 +117,13 @@ fun AppsPage(modifier: Modifier) {
             errorMessage != null -> StatePanelSlot { ErrorPanel(errorMessage.orEmpty(), onRetry = { refreshTick++ }) }
             services.isEmpty() -> StatePanelSlot { EmptyPanel("No installed services were returned by Project-os.") }
             filteredServices.isEmpty() -> StatePanelSlot { EmptyPanel("No services match the current search and filter.") }
-            else -> ServicesList(filteredServices, modifier = Modifier.weight(1f))
+            else -> ServicesList(
+                services = filteredServices,
+                modifier = Modifier.weight(1f),
+                onOpenError = { message -> snackbarHostState.showSnackbar(message) },
+            )
         }
+        SnackbarHost(hostState = snackbarHostState)
     }
 }
 
@@ -319,21 +328,26 @@ private fun FilterTab(modifier: Modifier, filter: ServiceFilter, count: Int, sel
 }
 
 @Composable
-private fun ServicesList(services: List<ServiceCardModel>, modifier: Modifier = Modifier) {
+private fun ServicesList(
+    services: List<ServiceCardModel>,
+    modifier: Modifier = Modifier,
+    onOpenError: suspend (String) -> Unit,
+) {
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(bottom = 6.dp),
         verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         items(services, key = { it.id }) { service ->
-            ServiceCard(service)
+            ServiceCard(service, onOpenError)
         }
     }
 }
 
 @Composable
-private fun ServiceCard(service: ServiceCardModel) {
+private fun ServiceCard(service: ServiceCardModel, onOpenError: suspend (String) -> Unit) {
     val uriHandler = LocalUriHandler.current
+    val scope = rememberCoroutineScope()
 
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
@@ -370,7 +384,14 @@ private fun ServiceCard(service: ServiceCardModel) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 Button(
-                    onClick = { uriHandler.openUri(service.url) },
+                    onClick = {
+                        val result = runCatching { uriHandler.openUri(service.url) }
+                        if (result.isFailure) {
+                            scope.launch {
+                                onOpenError("Could not open ${service.name}. Check that the service URL is valid.")
+                            }
+                        }
+                    },
                     enabled = service.url.isNotBlank(),
                     modifier = Modifier.height(32.dp),
                     shape = RoundedCornerShape(12.dp),
