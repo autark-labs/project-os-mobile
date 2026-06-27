@@ -39,6 +39,7 @@ kotlin {
     sourceSets {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
+            implementation("com.caverock:androidsvg-aar:1.4")
         }
         commonMain.dependencies {
             implementation(libs.components.resources)

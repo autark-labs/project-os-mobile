@@ -1,7 +1,8 @@
 package com.projectos.project_os_mobile
 
-import android.graphics.Color as AndroidColor
-import android.webkit.WebView
+import android.graphics.drawable.PictureDrawable
+import android.view.View
+import android.widget.ImageView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -17,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.viewinterop.AndroidView
+import com.caverock.androidsvg.SVG
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -32,31 +34,27 @@ actual fun CachedServiceIcon(
     modifier: Modifier,
 ) {
     val context = LocalContext.current
-    var cachedIcon by remember(iconUrl, cacheKey) { mutableStateOf<File?>(null) }
+    var iconDrawable by remember(iconUrl, cacheKey) { mutableStateOf<PictureDrawable?>(null) }
 
     LaunchedEffect(iconUrl, cacheKey) {
-        cachedIcon = withContext(Dispatchers.IO) {
-            cacheSvgIcon(context.cacheDir, iconUrl, cacheKey)
+        iconDrawable = withContext(Dispatchers.IO) {
+            cacheSvgIcon(context.cacheDir, iconUrl, cacheKey)?.toPictureDrawable()
         }
     }
 
-    val iconFile = cachedIcon
-    if (iconFile != null) {
+    val drawable = iconDrawable
+    if (drawable != null) {
         AndroidView(
             modifier = modifier,
             factory = { viewContext ->
-                WebView(viewContext).apply {
-                    setBackgroundColor(AndroidColor.TRANSPARENT)
-                    isHorizontalScrollBarEnabled = false
-                    isVerticalScrollBarEnabled = false
-                    settings.javaScriptEnabled = false
-                    settings.allowFileAccess = true
-                    settings.loadWithOverviewMode = true
-                    settings.useWideViewPort = true
+                ImageView(viewContext).apply {
+                    setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+                    adjustViewBounds = true
+                    scaleType = ImageView.ScaleType.FIT_CENTER
                 }
             },
-            update = { webView ->
-                webView.loadUrl(iconFile.toURI().toString())
+            update = { imageView ->
+                imageView.setImageDrawable(drawable)
             },
         )
     } else {
@@ -105,4 +103,12 @@ private fun cacheSvgIcon(cacheRoot: File, iconUrl: String, cacheKey: String): Fi
 
 private fun safeCacheKey(value: String): String {
     return value.lowercase().replace(Regex("[^a-z0-9._-]+"), "-").trim('-').ifBlank { "service-icon" }
+}
+
+private fun File.toPictureDrawable(): PictureDrawable? {
+    return runCatching {
+        inputStream().use { input ->
+            PictureDrawable(SVG.getFromInputStream(input).renderToPicture())
+        }
+    }.getOrNull()
 }
