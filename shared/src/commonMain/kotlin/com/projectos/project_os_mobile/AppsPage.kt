@@ -547,6 +547,7 @@ private fun App.toServiceCardModel(): ServiceCardModel {
         ?: accessUrl
         ?: ""
     val normalizedStatus = normalizedStatus()
+    val appTelemetry = telemetry
     return ServiceCardModel(
         id = appId.ifBlank { appName },
         name = appName.ifBlank { appId.ifBlank { "Unknown service" } },
@@ -554,8 +555,8 @@ private fun App.toServiceCardModel(): ServiceCardModel {
         url = bestUrl,
         status = normalizedStatus,
         healthLabel = healthSnapshot?.status?.ifBlank { friendlyStatus } ?: friendlyStatus.ifBlank { normalizedStatus.label },
-        cpuLabel = telemetry?.cpuPercent?.ifBlank { "Unavailable" } ?: "Unavailable",
-        memoryLabel = telemetry?.memoryUsage?.ifBlank { telemetry?.memoryPercent ?: "Unavailable" } ?: "Unavailable",
+        cpuLabel = appTelemetry?.cpuPercent?.ifBlank { "Unavailable" } ?: "Unavailable",
+        memoryLabel = appTelemetry?.memoryUsage?.ifBlank { appTelemetry.memoryPercent } ?: "Unavailable",
     )
 }
 
