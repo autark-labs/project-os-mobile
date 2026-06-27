@@ -7,6 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.projectos.project_os_mobile.AppsPage
+import com.projectos.project_os_mobile.SettingsPage
 import com.projectos.project_os_mobile.shared.Res
 import com.projectos.project_os_mobile.shared.apps_icon
 import com.projectos.project_os_mobile.shared.home_icon
@@ -29,6 +30,6 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
         composable(Routes.APPS.name)  { AppsPage(modifier) }
         composable(Routes.SYSTEM.name)  { Text("System") }
         composable(Routes.LOGS.name)  { Text("Logs") }
-        composable(Routes.SETTINGS.name)  { Text("Hello Settings!") }
+        composable(Routes.SETTINGS.name)  { SettingsPage(modifier) }
     }
 }

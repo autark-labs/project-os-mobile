@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import com.projectos.project_os_mobile.client.App
 import com.projectos.project_os_mobile.client.AppsFetchResult
 import com.projectos.project_os_mobile.client.fetchApps
+import com.projectos.project_os_mobile.connection.ProjectOsConnection
 
 @Composable
 fun AppsPage(modifier: Modifier) {
@@ -54,11 +55,12 @@ fun AppsPage(modifier: Modifier) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf(ServiceFilter.All) }
     var refreshTick by remember { mutableStateOf(0) }
+    val baseUrl = ProjectOsConnection.baseUrl
 
-    LaunchedEffect(refreshTick) {
+    LaunchedEffect(refreshTick, baseUrl) {
         isLoading = true
         errorMessage = null
-        when (val result = fetchApps()) {
+        when (val result = fetchApps(baseUrl)) {
             is AppsFetchResult.Success -> services = result.apps.map { it.toServiceCardModel() }
             is AppsFetchResult.Failure -> errorMessage = result.message
         }
@@ -91,7 +93,7 @@ fun AppsPage(modifier: Modifier) {
             .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        ServicesHeader(onRefresh = { refreshTick++ })
+        ServicesHeader(baseUrl = baseUrl, onRefresh = { refreshTick++ })
         SummaryCards(services)
         SearchAndFilters(
             query = searchQuery,
@@ -111,7 +113,7 @@ fun AppsPage(modifier: Modifier) {
 }
 
 @Composable
-private fun ServicesHeader(onRefresh: () -> Unit) {
+private fun ServicesHeader(baseUrl: String, onRefresh: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -128,6 +130,13 @@ private fun ServicesHeader(onRefresh: () -> Unit) {
                 text = "Monitor and manage your Project-os services",
                 color = MutedText,
                 style = MaterialTheme.typography.bodyMedium,
+            )
+            Text(
+                text = baseUrl,
+                color = MutedText.copy(alpha = 0.72f),
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         ElevatedButton(
