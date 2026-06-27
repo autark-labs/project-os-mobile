@@ -27,9 +27,9 @@ val STARTING_PAGE = Routes.APPS
 @Composable
 fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
     NavHost (navController = navController, startDestination = STARTING_PAGE.name, modifier = modifier) {
-        composable(Routes.APPS.name)  { AppsPage(modifier) }
+        composable(Routes.APPS.name)  { AppsPage(Modifier) }
         composable(Routes.SYSTEM.name)  { Text("System") }
         composable(Routes.LOGS.name)  { Text("Logs") }
-        composable(Routes.SETTINGS.name)  { SettingsPage(modifier) }
+        composable(Routes.SETTINGS.name)  { SettingsPage(Modifier) }
     }
 }
