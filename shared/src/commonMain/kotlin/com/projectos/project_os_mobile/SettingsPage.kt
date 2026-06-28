@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -21,27 +23,42 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.projectos.project_os_mobile.connection.ConnectionTestResult
 import com.projectos.project_os_mobile.connection.ProjectOsConnection
+import com.projectos.project_os_mobile.connection.normalizeProjectOsBaseUrl
+import com.projectos.project_os_mobile.connection.testProjectOsConnection
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsPage(modifier: Modifier = Modifier) {
     var draftBaseUrl by remember(ProjectOsConnection.baseUrl) {
         mutableStateOf(ProjectOsConnection.baseUrl)
     }
-    val normalizedDraft = draftBaseUrl.trim().trimEnd('/')
-    val hasChanges = normalizedDraft != ProjectOsConnection.baseUrl
-    val canSave = normalizedDraft.startsWith("http://") || normalizedDraft.startsWith("https://")
+    val normalizedDraft = normalizeProjectOsBaseUrl(draftBaseUrl)
+    val hasChanges = normalizedDraft != null && normalizedDraft != ProjectOsConnection.baseUrl
+    val canSave = normalizedDraft != null
+    val connectionResult = ProjectOsConnection.lastConnectionResult
+    val scope = rememberCoroutineScope()
+
+    fun testConnection(targetUrl: String) {
+        ProjectOsConnection.setConnectionResult(ConnectionTestResult.Checking)
+        scope.launch {
+            ProjectOsConnection.setConnectionResult(testProjectOsConnection(targetUrl))
+        }
+    }
 
     Column(
         modifier = modifier
             .background(Brush.verticalGradient(listOf(SettingsTop, SettingsBottom)))
             .safeContentPadding()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 18.dp)
             .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(18.dp),
@@ -77,7 +94,7 @@ fun SettingsPage(modifier: Modifier = Modifier) {
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = "Use the Android emulator host URL for local smoke testing, or replace it with your LAN/Tailscale Project-os URL.",
+                    text = "Enter your Project-os LAN or Tailscale URL. Local emulator testing can use the default Android host URL.",
                     color = SettingsMuted,
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -91,13 +108,16 @@ fun SettingsPage(modifier: Modifier = Modifier) {
                     placeholder = { Text(ProjectOsConnection.DEFAULT_BASE_URL) },
                     supportingText = {
                         Text(
-                            if (canSave) "Services will load from $normalizedDraft/api/apps"
-                            else "Enter a URL starting with http:// or https://"
+                            when {
+                                draftBaseUrl.isBlank() -> "Enter a Project-os URL."
+                                canSave -> "Services will load from ${normalizedDraft}/api/apps"
+                                else -> "Enter a URL starting with http:// or https://"
+                            }
                         )
                     },
                     isError = draftBaseUrl.isNotBlank() && !canSave,
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Button(
                         onClick = { ProjectOsConnection.updateBaseUrl(draftBaseUrl) },
                         enabled = hasChanges && canSave,
@@ -107,15 +127,28 @@ fun SettingsPage(modifier: Modifier = Modifier) {
                     }
                     OutlinedButton(
                         onClick = {
-                            ProjectOsConnection.reset()
-                            draftBaseUrl = ProjectOsConnection.baseUrl
+                            normalizedDraft?.let {
+                                ProjectOsConnection.updateBaseUrl(it)
+                                testConnection(it)
+                            }
                         },
+                        enabled = canSave && connectionResult != ConnectionTestResult.Checking,
                     ) {
-                        Text("Use emulator default")
+                        Text(if (connectionResult == ConnectionTestResult.Checking) "Checking" else "Test")
                     }
+                }
+                OutlinedButton(
+                    onClick = {
+                        ProjectOsConnection.reset()
+                        draftBaseUrl = ProjectOsConnection.baseUrl
+                    },
+                ) {
+                    Text("Use emulator default")
                 }
             }
         }
+
+        ConnectionStatusCard(result = connectionResult)
 
         ElevatedCard(
             modifier = Modifier.fillMaxWidth(),
@@ -132,17 +165,61 @@ fun SettingsPage(modifier: Modifier = Modifier) {
                     style = MaterialTheme.typography.labelLarge,
                 )
                 Text(
-                    text = "${ProjectOsConnection.baseUrl}/api/apps",
+                    text = "${ProjectOsConnection.baseUrl}/api/health",
                     color = SettingsCobalt,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = "This first slice keeps connection state in memory. Secure storage and pairing can come later if the app needs authenticated actions.",
+                    text = "This app is read-only for now. It stores only the Project-os base URL; no admin token, password, or service credential is stored.",
                     color = SettingsMuted,
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun ConnectionStatusCard(result: ConnectionTestResult) {
+    val title = when (result) {
+        ConnectionTestResult.Idle -> "Connection not tested"
+        ConnectionTestResult.Checking -> "Checking Project-os"
+        is ConnectionTestResult.Connected -> "Connected"
+        is ConnectionTestResult.Failed -> "Connection failed"
+    }
+    val detail = when (result) {
+        ConnectionTestResult.Idle -> "Use Test to verify the current Project-os URL."
+        ConnectionTestResult.Checking -> "Calling /api/health..."
+        is ConnectionTestResult.Connected -> result.message
+        is ConnectionTestResult.Failed -> result.message
+    }
+    val accent = when (result) {
+        is ConnectionTestResult.Connected -> SettingsGreen
+        is ConnectionTestResult.Failed -> SettingsRed
+        else -> SettingsMuted
+    }
+
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = title,
+                color = accent,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.ExtraBold,
+            )
+            Text(
+                text = detail,
+                color = SettingsMuted,
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }
@@ -152,3 +229,5 @@ private val SettingsBottom = Color(0xFFF3F6FA)
 private val SettingsGraphite = Color(0xFF12182B)
 private val SettingsMuted = Color(0xFF748096)
 private val SettingsCobalt = Color(0xFF2F5CC8)
+private val SettingsGreen = Color(0xFF2FBF71)
+private val SettingsRed = Color(0xFFE34B3F)
