@@ -91,29 +91,15 @@ fun AppsPage(modifier: Modifier) {
     }
 
     val filteredServices = remember(services, searchQuery, selectedFilter) {
-        services.filter { service ->
-            val matchesQuery = searchQuery.isBlank() ||
-                service.name.contains(searchQuery, ignoreCase = true) ||
-                service.id.contains(searchQuery, ignoreCase = true) ||
-                service.url.contains(searchQuery, ignoreCase = true) ||
-                service.category.contains(searchQuery, ignoreCase = true)
-
-            val matchesFilter = when (selectedFilter) {
-                ServiceFilter.All -> true
-                ServiceFilter.Online -> service.status == ServiceStatus.Online
-                ServiceFilter.Offline -> service.status != ServiceStatus.Online
-            }
-
-            matchesQuery && matchesFilter
-        }
+        filterServiceCards(services, searchQuery, selectedFilter)
     }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(Brush.verticalGradient(listOf(ScreenTop, ScreenBottom)))
-            .padding(horizontal = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(7.dp),
+            .padding(horizontal = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
         ServicesHeader(baseUrl = baseUrl, onRefresh = { refreshTick++ })
         SummaryCards(services)
@@ -168,7 +154,7 @@ fun AppsPage(modifier: Modifier) {
 @Composable
 private fun ServicesHeader(baseUrl: String, onRefresh: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 1.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -182,7 +168,7 @@ private fun ServicesHeader(baseUrl: String, onRefresh: () -> Unit) {
             Text(
                 text = "Monitor and manage your Project-os services",
                 color = MutedText,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
             )
             Text(
                 text = baseUrl,
@@ -194,7 +180,7 @@ private fun ServicesHeader(baseUrl: String, onRefresh: () -> Unit) {
         }
         ElevatedButton(
             onClick = onRefresh,
-            modifier = Modifier.size(40.dp),
+            modifier = Modifier.size(36.dp),
             shape = RoundedCornerShape(14.dp),
             contentPadding = PaddingValues(0.dp),
             colors = ButtonDefaults.elevatedButtonColors(containerColor = Color.White, contentColor = Cobalt),
@@ -250,18 +236,18 @@ private fun SummaryCard(
     accent: Color,
 ) {
     ElevatedCard(
-        modifier = modifier.height(86.dp),
-        shape = RoundedCornerShape(18.dp),
+        modifier = modifier.height(74.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(9.dp),
+            modifier = Modifier.fillMaxSize().padding(7.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Box(
-                modifier = Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(accent.copy(alpha = 0.11f)),
+                modifier = Modifier.size(32.dp).clip(RoundedCornerShape(11.dp)).background(accent.copy(alpha = 0.11f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(iconText, color = accent, fontWeight = FontWeight.ExtraBold)
@@ -270,11 +256,10 @@ private fun SummaryCard(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
-                Text(title, color = MutedText, style = MaterialTheme.typography.labelMedium, maxLines = 1)
-                Text(value, color = accent, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(title, color = MutedText, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                Text(value, color = accent, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1)
                 Text(detail, color = MutedText, style = MaterialTheme.typography.labelSmall, maxLines = 1)
             }
-            Text(">", color = MutedText, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -344,12 +329,12 @@ private fun SearchAndFilters(
 ) {
     val hasActiveFilters = query.isNotBlank() || selectedFilter != ServiceFilter.All
 
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
                 value = query,
                 onValueChange = onQueryChange,
-                modifier = Modifier.weight(1f).height(56.dp),
+                modifier = Modifier.weight(1f).height(52.dp),
                 singleLine = true,
                 shape = RoundedCornerShape(15.dp),
                 placeholder = { Text("Search services...") },
@@ -357,7 +342,7 @@ private fun SearchAndFilters(
             ElevatedButton(
                 onClick = onClearFilters,
                 enabled = hasActiveFilters,
-                modifier = Modifier.height(48.dp),
+                modifier = Modifier.height(42.dp),
                 shape = RoundedCornerShape(15.dp),
                 colors = ButtonDefaults.elevatedButtonColors(containerColor = Color.White, contentColor = Slate),
             ) {
@@ -397,7 +382,7 @@ private fun FilterTab(modifier: Modifier, filter: ServiceFilter, count: Int, sel
             .clip(RoundedCornerShape(16.dp))
             .background(if (selected) Cobalt else Color.Transparent)
             .clickable(onClick = onClick)
-            .padding(vertical = 6.dp),
+                    .padding(vertical = 5.dp),
         contentAlignment = Alignment.Center,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -427,7 +412,7 @@ private fun ServicesList(
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(bottom = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(7.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         items(services, key = { it.id }) { service ->
             ServiceCard(service, onOpenError, onServiceSelected)
@@ -450,14 +435,14 @@ private fun ServiceCard(
         colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
     ) {
-        Column(modifier = Modifier.padding(9.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ServiceIcon(service)
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
                         service.name,
                         color = Graphite,
-                        style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.ExtraBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -474,7 +459,7 @@ private fun ServiceCard(
                     service.url.ifBlank { "No service link configured" },
                     modifier = Modifier.weight(1f),
                     color = if (service.url.isBlank()) MutedText else Cobalt,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -488,7 +473,7 @@ private fun ServiceCard(
                         }
                     },
                     enabled = service.url.isNotBlank(),
-                    modifier = Modifier.height(32.dp),
+                    modifier = Modifier.height(30.dp),
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 9.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Cobalt),
@@ -496,8 +481,10 @@ private fun ServiceCard(
                     Text("Open", style = MaterialTheme.typography.labelMedium)
                 }
             }
-            HorizontalDivider(color = Border)
-            MetricsRow(service)
+            if (service.hasDetailedMetrics) {
+                HorizontalDivider(color = Border)
+                MetricsRow(service)
+            }
         }
     }
 }
@@ -505,7 +492,7 @@ private fun ServiceCard(
 @Composable
 private fun ServiceIcon(service: ServiceCardModel) {
     Box(
-        modifier = Modifier.size(38.dp).clip(RoundedCornerShape(13.dp)).background(service.status.accent.copy(alpha = 0.12f)),
+        modifier = Modifier.size(34.dp).clip(RoundedCornerShape(12.dp)).background(service.status.accent.copy(alpha = 0.12f)),
         contentAlignment = Alignment.Center,
     ) {
         CachedServiceIcon(
@@ -513,7 +500,7 @@ private fun ServiceIcon(service: ServiceCardModel) {
             cacheKey = service.id,
             fallbackText = service.name.firstOrNull()?.uppercase() ?: "?",
             tint = service.status.accent,
-            modifier = Modifier.size(30.dp),
+            modifier = Modifier.size(27.dp),
         )
     }
 }
@@ -526,12 +513,12 @@ private fun StatusChip(status: ServiceStatus) {
         contentColor = status.accent,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Box(modifier = Modifier.size(7.dp).clip(CircleShape).background(status.accent))
-            Text(status.label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+            Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(status.accent))
+            Text(status.label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -622,12 +609,39 @@ internal data class ServiceCardModel(
     val cpuLabel: String,
     val memoryLabel: String,
     val source: App,
-)
+) {
+    val hasDetailedMetrics: Boolean
+        get() = cpuLabel != "Unavailable" || memoryLabel != "Unavailable"
+}
 
-private enum class ServiceFilter(val label: String) {
+internal enum class ServiceFilter(val label: String) {
     All("All"),
     Online("Online"),
     Offline("Offline"),
+}
+
+internal fun filterServiceCards(
+    services: List<ServiceCardModel>,
+    searchQuery: String,
+    selectedFilter: ServiceFilter,
+): List<ServiceCardModel> {
+    return services.filter { service ->
+        val matchesQuery = searchQuery.isBlank() ||
+            service.name.contains(searchQuery, ignoreCase = true) ||
+            service.id.contains(searchQuery, ignoreCase = true) ||
+            service.url.contains(searchQuery, ignoreCase = true) ||
+            service.category.contains(searchQuery, ignoreCase = true) ||
+            service.status.label.contains(searchQuery, ignoreCase = true) ||
+            service.healthLabel.contains(searchQuery, ignoreCase = true)
+
+        val matchesFilter = when (selectedFilter) {
+            ServiceFilter.All -> true
+            ServiceFilter.Online -> service.status == ServiceStatus.Online
+            ServiceFilter.Offline -> service.status != ServiceStatus.Online
+        }
+
+        matchesQuery && matchesFilter
+    }
 }
 
 internal enum class ServiceStatus(val label: String, val accent: Color) {
