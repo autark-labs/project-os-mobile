@@ -65,6 +65,7 @@ fun AppsPage(modifier: Modifier) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf(ServiceFilter.All) }
+    var selectedService by remember { mutableStateOf<ServiceCardModel?>(null) }
     var refreshTick by remember { mutableStateOf(0) }
     val baseUrl = ProjectOsConnection.baseUrl
     val snackbarHostState = remember { SnackbarHostState() }
@@ -149,9 +150,18 @@ fun AppsPage(modifier: Modifier) {
                 services = filteredServices,
                 modifier = Modifier.weight(1f),
                 onOpenError = { message -> snackbarHostState.showSnackbar(message) },
+                onServiceSelected = { selectedService = it },
             )
         }
         SnackbarHost(hostState = snackbarHostState)
+    }
+
+    selectedService?.let { service ->
+        ServiceDetailSheet(
+            service = service,
+            onDismiss = { selectedService = null },
+            onOpenError = { message -> snackbarHostState.showSnackbar(message) },
+        )
     }
 }
 
@@ -412,6 +422,7 @@ private fun ServicesList(
     services: List<ServiceCardModel>,
     modifier: Modifier = Modifier,
     onOpenError: suspend (String) -> Unit,
+    onServiceSelected: (ServiceCardModel) -> Unit,
 ) {
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
@@ -419,18 +430,22 @@ private fun ServicesList(
         verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         items(services, key = { it.id }) { service ->
-            ServiceCard(service, onOpenError)
+            ServiceCard(service, onOpenError, onServiceSelected)
         }
     }
 }
 
 @Composable
-private fun ServiceCard(service: ServiceCardModel, onOpenError: suspend (String) -> Unit) {
+private fun ServiceCard(
+    service: ServiceCardModel,
+    onOpenError: suspend (String) -> Unit,
+    onServiceSelected: (ServiceCardModel) -> Unit,
+) {
     val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
 
     ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onServiceSelected(service) },
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
@@ -596,7 +611,7 @@ private fun StatePanel(title: String, body: String, action: @Composable (() -> U
     }
 }
 
-private data class ServiceCardModel(
+internal data class ServiceCardModel(
     val id: String,
     val name: String,
     val category: String,
@@ -606,6 +621,7 @@ private data class ServiceCardModel(
     val healthLabel: String,
     val cpuLabel: String,
     val memoryLabel: String,
+    val source: App,
 )
 
 private enum class ServiceFilter(val label: String) {
@@ -614,7 +630,7 @@ private enum class ServiceFilter(val label: String) {
     Offline("Offline"),
 }
 
-private enum class ServiceStatus(val label: String, val accent: Color) {
+internal enum class ServiceStatus(val label: String, val accent: Color) {
     Online("Online", OnlineGreen),
     Offline("Offline", OfflineRed),
     Updating("Updating", Cobalt),
@@ -642,6 +658,7 @@ private fun App.toServiceCardModel(baseUrl: String): ServiceCardModel {
         healthLabel = displayStatus,
         cpuLabel = appTelemetry?.cpuPercent?.ifBlank { "Unavailable" } ?: "Unavailable",
         memoryLabel = appTelemetry?.memoryUsage?.ifBlank { appTelemetry.memoryPercent } ?: "Unavailable",
+        source = this,
     )
 }
 

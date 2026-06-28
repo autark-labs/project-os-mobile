@@ -80,6 +80,60 @@ data class ProjectOsIssue(
 )
 
 @Serializable
+data class AppGuideValue(
+    val label: String = "",
+    val value: String = "",
+    val sensitive: Boolean = false,
+    val qr: Boolean = false,
+)
+
+@Serializable
+data class AppUsageGuide(
+    val kind: String = "",
+    val primaryAction: String = "",
+    val openUrlLabel: String = "",
+    val headline: String = "",
+    val summary: String = "",
+    val setupSteps: List<String> = emptyList(),
+    val values: List<AppGuideValue> = emptyList(),
+    val notes: List<String> = emptyList(),
+)
+
+@Serializable
+data class AppSetupField(
+    val label: String = "",
+    val value: String = "",
+)
+
+@Serializable
+data class AppSetupIntegration(
+    val label: String = "",
+    val status: String = "",
+    val detail: String = "",
+)
+
+@Serializable
+data class AppSetupGuide(
+    val kind: String = "",
+    val automation: String = "",
+    val generatedValues: List<AppSetupField> = emptyList(),
+    val copyableFields: List<AppSetupField> = emptyList(),
+    val qrFields: List<AppSetupField> = emptyList(),
+    val integrations: List<AppSetupIntegration> = emptyList(),
+    val userSteps: List<String> = emptyList(),
+    val automationCapabilities: List<String> = emptyList(),
+)
+
+@Serializable
+data class AppEvent(
+    val id: Long = 0,
+    val appId: String = "",
+    val type: String = "",
+    val message: String = "",
+    val createdAt: String = "",
+)
+
+@Serializable
 data class ProjectOsManagedApp(
     val appInstanceId: String = "",
     val catalogAppId: String = "",
@@ -129,6 +183,10 @@ data class App(
     val lastBackup: String = "",
     val telemetry: AppTelemetry? = null,
     val healthSnapshot: AppHealthSnapshot? = null,
+    val usageGuide: AppUsageGuide? = null,
+    val setupGuide: AppSetupGuide? = null,
+    val recentEvents: List<AppEvent> = emptyList(),
+    val issues: List<ProjectOsIssue> = emptyList(),
     val canonicalUserStatus: String? = null,
     val canonicalRuntimeState: String? = null,
     val canonicalOwnershipState: String? = null,
@@ -208,6 +266,10 @@ fun applicationStateToApps(state: ProjectOsApplicationState): List<App> {
             lastBackup = runtime?.lastBackup.orEmpty(),
             telemetry = runtime?.telemetry,
             healthSnapshot = runtime?.healthSnapshot,
+            usageGuide = runtime?.usageGuide,
+            setupGuide = runtime?.setupGuide,
+            recentEvents = runtime?.recentEvents.orEmpty(),
+            issues = managed.issues,
             canonicalUserStatus = managed.userStatus,
             canonicalRuntimeState = managed.runtimeState,
             canonicalOwnershipState = managed.ownershipState,
