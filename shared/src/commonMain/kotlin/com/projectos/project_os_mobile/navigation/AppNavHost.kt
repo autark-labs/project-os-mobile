@@ -6,8 +6,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.projectos.project_os_mobile.AppsPage
-import com.projectos.project_os_mobile.PlaceholderPage
+import com.projectos.project_os_mobile.LogsPage
 import com.projectos.project_os_mobile.SettingsPage
+import com.projectos.project_os_mobile.SystemPage
 import com.projectos.project_os_mobile.shared.Res
 import com.projectos.project_os_mobile.shared.apps_icon
 import com.projectos.project_os_mobile.shared.home_icon
@@ -28,20 +29,8 @@ val STARTING_PAGE = Routes.APPS
 fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
     NavHost (navController = navController, startDestination = STARTING_PAGE.name, modifier = modifier) {
         composable(Routes.APPS.name)  { AppsPage(Modifier) }
-        composable(Routes.SYSTEM.name)  {
-            PlaceholderPage(
-                title = "System",
-                subtitle = "Host health and resource details",
-                body = "The read-only MVP starts with Services. System details can use existing Project-os system endpoints in a later slice.",
-            )
-        }
-        composable(Routes.LOGS.name)  {
-            PlaceholderPage(
-                title = "Logs",
-                subtitle = "Recent Project-os activity",
-                body = "Logs are intentionally out of scope for the first Services slice. Keep this tab as a stable navigation target for now.",
-            )
-        }
+        composable(Routes.SYSTEM.name)  { SystemPage(Modifier) }
+        composable(Routes.LOGS.name)  { LogsPage(Modifier) }
         composable(Routes.SETTINGS.name)  { SettingsPage(Modifier) }
     }
 }
