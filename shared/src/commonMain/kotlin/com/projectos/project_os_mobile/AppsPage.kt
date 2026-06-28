@@ -48,11 +48,19 @@ import com.projectos.project_os_mobile.client.App
 import com.projectos.project_os_mobile.client.AppsFetchResult
 import com.projectos.project_os_mobile.client.fetchApps
 import com.projectos.project_os_mobile.connection.ProjectOsConnection
+import com.projectos.project_os_mobile.tailscale.ProjectOsAccessStatus
+import com.projectos.project_os_mobile.tailscale.TailscaleAccessSummary
+import com.projectos.project_os_mobile.tailscale.TailscaleAccessTone
+import com.projectos.project_os_mobile.tailscale.fetchProjectOsAccessStatus
+import com.projectos.project_os_mobile.tailscale.rememberTailscaleAppController
+import com.projectos.project_os_mobile.tailscale.tailscaleAccessSummary
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
 fun AppsPage(modifier: Modifier) {
     var services by remember { mutableStateOf<List<ServiceCardModel>>(emptyList()) }
+    var accessStatus by remember { mutableStateOf<ProjectOsAccessStatus?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
@@ -60,6 +68,8 @@ fun AppsPage(modifier: Modifier) {
     var refreshTick by remember { mutableStateOf(0) }
     val baseUrl = ProjectOsConnection.baseUrl
     val snackbarHostState = remember { SnackbarHostState() }
+    val tailscaleAppController = rememberTailscaleAppController()
+    val tailscaleSummary = tailscaleAccessSummary(accessStatus, tailscaleAppController.isInstalled)
 
     LaunchedEffect(refreshTick, baseUrl) {
         isLoading = true
@@ -68,7 +78,15 @@ fun AppsPage(modifier: Modifier) {
             is AppsFetchResult.Success -> services = result.apps.map { it.toServiceCardModel(baseUrl) }
             is AppsFetchResult.Failure -> errorMessage = result.message
         }
+        accessStatus = runCatching { fetchProjectOsAccessStatus(baseUrl) }.getOrNull()
         isLoading = false
+    }
+
+    LaunchedEffect(baseUrl) {
+        while (true) {
+            delay(30_000)
+            refreshTick++
+        }
     }
 
     val filteredServices = remember(services, searchQuery, selectedFilter) {
@@ -98,6 +116,16 @@ fun AppsPage(modifier: Modifier) {
     ) {
         ServicesHeader(baseUrl = baseUrl, onRefresh = { refreshTick++ })
         SummaryCards(services)
+        TailscaleAccessBanner(
+            summary = tailscaleSummary,
+            onAction = {
+                if (tailscaleAppController.isInstalled) {
+                    tailscaleAppController.openTailscale()
+                } else {
+                    tailscaleAppController.openInstallPage()
+                }
+            },
+        )
         SearchAndFilters(
             query = searchQuery,
             onQueryChange = { searchQuery = it },
@@ -237,6 +265,58 @@ private fun SummaryCard(
                 Text(detail, color = MutedText, style = MaterialTheme.typography.labelSmall, maxLines = 1)
             }
             Text(">", color = MutedText, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun TailscaleAccessBanner(summary: TailscaleAccessSummary, onAction: () -> Unit) {
+    val accent = when (summary.tone) {
+        TailscaleAccessTone.Ready -> OnlineGreen
+        TailscaleAccessTone.Info -> Cobalt
+        TailscaleAccessTone.Warning -> WarningOrange
+    }
+
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 11.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Box(
+                modifier = Modifier.size(10.dp).clip(CircleShape).background(accent),
+            )
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = summary.title,
+                    color = Graphite,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = summary.detail,
+                    color = MutedText,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Button(
+                onClick = onAction,
+                modifier = Modifier.height(32.dp),
+                shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(horizontal = 10.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = accent.copy(alpha = 0.12f), contentColor = accent),
+            ) {
+                Text(summary.actionLabel, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
