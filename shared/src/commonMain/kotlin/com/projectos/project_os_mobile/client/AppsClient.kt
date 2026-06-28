@@ -20,7 +20,7 @@ data class AppTelemetry(
 )
 
 @Serializable
-data class AppHealthSnapshot (
+data class AppHealthSnapshot(
     val appId: String = "",
     val status: String = "Unknown",
     val message: String = "",
@@ -55,6 +55,58 @@ data class AccessObservedState(
     val lastSuccessfulAccessAt: String? = null,
     val lastRepairAttemptAt: String? = null,
     val lastRepairStatus: String? = null
+)
+
+@Serializable
+data class ProjectOsAction(
+    val id: String = "",
+    val label: String = "",
+    val method: String? = null,
+    val href: String? = null,
+    val route: String? = null,
+    val confirmationRequired: Boolean = false,
+    val danger: Boolean = false,
+)
+
+@Serializable
+data class ProjectOsIssue(
+    val id: String = "",
+    val scope: String = "",
+    val subjectId: String = "",
+    val severity: String = "",
+    val reasonCode: String = "",
+    val title: String = "",
+    val summary: String = "",
+)
+
+@Serializable
+data class ProjectOsManagedApp(
+    val appInstanceId: String = "",
+    val catalogAppId: String = "",
+    val name: String = "Unknown service",
+    val category: String = "",
+    val icon: String = "",
+    val userStatus: String = "Unknown",
+    val installState: String = "",
+    val runtimeState: String = "",
+    val ownershipState: String = "",
+    val accessState: String = "",
+    val backupState: String = "",
+    val localUrl: String? = null,
+    val privateUrl: String? = null,
+    val issues: List<ProjectOsIssue> = emptyList(),
+    val actions: List<ProjectOsAction> = emptyList(),
+    val updatedAt: String = "",
+)
+
+@Serializable
+data class ProjectOsApplicationState(
+    val managedApps: List<ProjectOsManagedApp> = emptyList(),
+    val runtimeApps: List<App> = emptyList(),
+    val updatedAt: String = "",
+    val refreshStatus: String = "",
+    val stale: Boolean = false,
+    val lastError: String = "",
 )
 
 @Serializable
@@ -98,10 +150,88 @@ val client = HttpClient(CIO) {
 }
 
 suspend fun fetchApps(baseUrl: String = "http://10.0.2.2:8082"): AppsFetchResult {
+    val normalizedBaseUrl = baseUrl.trimEnd('/')
+    val applicationStateResult = runCatching {
+        val state: ProjectOsApplicationState = client.get("$normalizedBaseUrl/api/application-state").body()
+        applicationStateToApps(state)
+    }
+
+    applicationStateResult.getOrNull()
+        ?.takeIf { it.isNotEmpty() }
+        ?.let { return AppsFetchResult.Success(it) }
+
     return try {
-        val apps: List<App> = client.get("${baseUrl.trimEnd('/')}/api/apps").body()
+        val apps: List<App> = client.get("$normalizedBaseUrl/api/apps").body()
         AppsFetchResult.Success(apps)
     } catch (error: Exception) {
-        AppsFetchResult.Failure(error.message ?: "Project-os could not be reached.")
+        val message = applicationStateResult.exceptionOrNull()?.message
+            ?: error.message
+            ?: "Project-os could not be reached."
+        AppsFetchResult.Failure(message)
     }
+}
+
+fun applicationStateToApps(state: ProjectOsApplicationState): List<App> {
+    if (state.managedApps.isEmpty()) return state.runtimeApps
+
+    val runtimeById = state.runtimeApps.associateBy { it.appId }
+    return state.managedApps.map { managed ->
+        val runtime = runtimeById[managed.catalogAppId]
+        val selectedUrl = selectedOpenUrl(managed, runtime)
+        val runtimeAccessRoute = runtime?.accessRoute
+
+        App(
+            appId = managed.catalogAppId.ifBlank { runtime?.appId.orEmpty() },
+            appName = managed.name.ifBlank { runtime?.appName ?: "Unknown service" },
+            category = managed.category.ifBlank { runtime?.category.orEmpty() },
+            description = runtime?.description.orEmpty(),
+            version = runtime?.version.orEmpty(),
+            image = managed.icon.ifBlank { runtime?.image.orEmpty() },
+            friendlyStatus = managed.userStatus.ifBlank { runtime?.friendlyStatus ?: "Unknown" },
+            technicalStatus = runtime?.technicalStatus ?: managed.runtimeState,
+            healthCheck = runtime?.healthCheck.orEmpty(),
+            runtimePath = runtime?.runtimePath.orEmpty(),
+            composeProject = runtime?.composeProject.orEmpty(),
+            accessUrl = selectedUrl,
+            accessRoute = AppAccessRoute(
+                primaryOpenUrl = selectedUrl,
+                localUrl = managed.localUrl ?: runtimeAccessRoute?.localUrl,
+                privateUrl = managed.privateUrl ?: runtimeAccessRoute?.privateUrl,
+                backendTargetUrl = runtimeAccessRoute?.backendTargetUrl,
+                backendProtocol = runtimeAccessRoute?.backendProtocol,
+                localPort = runtimeAccessRoute?.localPort,
+                privatePort = runtimeAccessRoute?.privatePort,
+                privateLinkStatus = runtimeAccessRoute?.privateLinkStatus,
+            ),
+            observedAccess = runtime?.observedAccess,
+            installedAt = runtime?.installedAt.orEmpty(),
+            lastBackup = runtime?.lastBackup.orEmpty(),
+            telemetry = runtime?.telemetry,
+            healthSnapshot = runtime?.healthSnapshot,
+            canonicalUserStatus = managed.userStatus,
+            canonicalRuntimeState = managed.runtimeState,
+            canonicalOwnershipState = managed.ownershipState,
+            canonicalAccessState = managed.accessState,
+            canonicalBackupState = managed.backupState,
+        )
+    }
+}
+
+private fun selectedOpenUrl(managed: ProjectOsManagedApp, runtime: App?): String? {
+    return managed.actions.firstNotNullOfOrNull { action ->
+        val isOpenAction = action.id.startsWith("open-", ignoreCase = true) ||
+            action.label.equals("Open", ignoreCase = true)
+        action.href?.takeIf { isOpenAction && action.method.equals("GET", ignoreCase = true) && it.isAbsoluteHttpUrl() }
+    }
+        ?: managed.privateUrl?.takeIf { it.isAbsoluteHttpUrl() }
+        ?: runtime?.accessRoute?.privateUrl?.takeIf { it.isAbsoluteHttpUrl() }
+        ?: runtime?.observedAccess?.privateUrl?.takeIf { it.isAbsoluteHttpUrl() }
+        ?: managed.localUrl?.takeIf { it.isAbsoluteHttpUrl() }
+        ?: runtime?.accessRoute?.localUrl?.takeIf { it.isAbsoluteHttpUrl() }
+        ?: runtime?.observedAccess?.localUrl?.takeIf { it.isAbsoluteHttpUrl() }
+        ?: runtime?.accessUrl?.takeIf { it.isAbsoluteHttpUrl() }
+}
+
+private fun String.isAbsoluteHttpUrl(): Boolean {
+    return startsWith("http://") || startsWith("https://")
 }
